@@ -102,17 +102,18 @@ async function run() {
             res.send(result);
         });
 
-        // app.patch('/users/admin/:id', verifyToken, verifyAdmin, async (req, res) => {
-        //     const id = req.params.id;
-        //     const filter = { _id: new ObjectId(id) };
-        //     const updateDoc = {
-        //         $set: {
-        //             role: 'admin'
-        //         }
-        //     };
-        //     const result = await userCollection.updateOne(filter, updateDoc);
-        //     res.send(result);
-        // });
+        app.patch('/users/role/:id', async (req, res) => {
+            const id = req.params.id;
+            const { role } = req.body;
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    role
+                }
+            };
+            const result = await userCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        });
 
         app.delete('/users/:id', async (req, res) => {
             const id = req.params.id;
