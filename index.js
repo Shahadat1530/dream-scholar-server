@@ -39,21 +39,21 @@ async function run() {
 
 
         // middlewares
-        // const verifyToken = (req, res, next) => {
-        //     // console.log('inside the verify', req.headers.authorization);
-        //     if (!req.headers.authorization) {
-        //         return res.status(401).send({ message: 'unauthorize access' });
-        //     }
+        const verifyToken = (req, res, next) => {
+            // console.log('inside the verify', req.headers.authorization);
+            if (!req.headers.authorization) {
+                return res.status(401).send({ message: 'unauthorize access' });
+            }
 
-        //     const token = req.headers.authorization.split(' ')[1]
-        //     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-        //         if (err) {
-        //             return res.status(401).send({ message: 'unauthorize access' });
-        //         }
-        //         req.decoded = decoded;
-        //         next();
-        //     })
-        // };
+            const token = req.headers.authorization.split(' ')[1]
+            jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+                if (err) {
+                    return res.status(401).send({ message: 'unauthorize access' });
+                }
+                req.decoded = decoded;
+                next();
+            })
+        };
 
         // const verifyAdmin = async (req, res, next) => {
         //     const email = req.decoded.email;
@@ -70,6 +70,7 @@ async function run() {
 
         // user api's
         app.get('/users', async (req, res) => {
+            console.log(req.headers);
             const result = await userCollection.find().toArray();
             res.send(result);
         });
