@@ -10,7 +10,6 @@ app.use(cors());
 app.use(express.json());
 
 
-
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.c0tb2.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -69,26 +68,26 @@ async function run() {
 
 
         // user api's
-        // app.get('/users', verifyToken, verifyAdmin, async (req, res) => {
-        //     const result = await userCollection.find().toArray();
-        //     res.send(result);
-        // });
-
-        app.get('/users/admin/:email', verifyToken, async (req, res) => {
-            const email = req.params.email;
-            if (email !== req.decoded.email) {
-                return res.status(403).send({ message: 'forbidden access' });
-            };
-
-            const query = { email: email };
-            const user = await userCollection.findOne(query);
-            let admin = false;
-            if (user) {
-                admin = user?.role === 'admin';
-            };
-            res.send({ admin });
-
+        app.get('/users', async (req, res) => {
+            const result = await userCollection.find().toArray();
+            res.send(result);
         });
+
+        // app.get('/users/admin/:email', verifyToken, async (req, res) => {
+        //     const email = req.params.email;
+        //     if (email !== req.decoded.email) {
+        //         return res.status(403).send({ message: 'forbidden access' });
+        //     };
+
+        //     const query = { email: email };
+        //     const user = await userCollection.findOne(query);
+        //     let admin = false;
+        //     if (user) {
+        //         admin = user?.role === 'admin';
+        //     };
+        //     res.send({ admin });
+
+        // });
 
         app.post('/users', async (req, res) => {
             const user = req.body;
@@ -115,12 +114,12 @@ async function run() {
         //     res.send(result);
         // });
 
-        // app.delete('/users/:id', verifyToken, verifyAdmin, async (req, res) => {
-        //     const id = req.params.id;
-        //     const query = { _id: new ObjectId(id) };
-        //     const result = await userCollection.deleteOne(query);
-        //     res.send(result);
-        // });
+        app.delete('/users/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await userCollection.deleteOne(query);
+            res.send(result);
+        });
 
 
         // Send a ping to confirm a successful connection
@@ -131,9 +130,10 @@ async function run() {
         // await client.close();
     }
 }
+run().catch(console.dir);
 
 
-app.get('/', async (req, res) => {
+app.get('/', (req, res) => {
     res.send('Dream Scholar Hub');
 });
 
