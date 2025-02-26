@@ -29,6 +29,7 @@ async function run() {
 
         const userCollection = client.db('scholarDB').collection('users');
         const scholarCollection = client.db('scholarDB').collection('scholars');
+        const appliedCollection = client.db('scholarDB').collection('applied');
 
 
         // jwt api's
@@ -131,6 +132,20 @@ async function run() {
             const result = await scholarCollection.insertOne(item);
             res.send(result);
         });
+
+
+        // applied related api's
+        app.get('/scholarApplied', verifyToken, async (req, res) => {
+            const result = await appliedCollection.find().toArray();
+            res.send(result);
+        });
+
+        app.post('/scholarApplied', verifyToken, async (req, res) => {
+            const item = req.body;
+            const result = await appliedCollection.insertOne(item);
+            res.send(result);
+        });
+
 
 
 
