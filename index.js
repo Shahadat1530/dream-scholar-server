@@ -30,6 +30,7 @@ async function run() {
         const userCollection = client.db('scholarDB').collection('users');
         const scholarCollection = client.db('scholarDB').collection('scholars');
         const appliedCollection = client.db('scholarDB').collection('applied');
+        const reviewCollection = client.db('scholarDB').collection('reviews');
 
 
         // jwt api's
@@ -148,10 +149,25 @@ async function run() {
             res.send(result);
         });
 
-        app.delete('/scholarApplied/:id', async (req, res) => {
+        app.delete('/scholarApplied/:id', verifyToken, async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await appliedCollection.deleteOne(query);
+            res.send(result);
+        });
+
+
+        // review related api's
+        app.get('/reviews', async (req, res) => {
+            const email = req.query.email;
+            const query = { userEmail: email };
+            const result = await reviewCollection.find(query).toArray();
+            res.send(result);
+        });
+
+        app.post('/reviews', async (req, res) => {
+            const item = req.body;
+            const result = await reviewCollection.insertOne(item);
             res.send(result);
         });
 
