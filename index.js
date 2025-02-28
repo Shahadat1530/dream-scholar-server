@@ -171,6 +171,30 @@ async function run() {
             res.send(result);
         });
 
+        app.patch('/reviews/:id', async (req, res) => {
+            const id = req.params.id;
+            const reviewData = req.body;
+            const filter = { _id: new ObjectId(id) };
+            const updateReview = {
+                $set: {
+                    rating: reviewData.rating,
+                    comment: reviewData.comment,
+                    date: reviewData.date
+                }
+            };
+
+            const result = await reviewsCollection.updateOne(filter, updateReview);
+            res.send(result);
+        });
+
+
+        app.delete('/reviews/:id', async (req, res) => {
+            const reviewId = req.params.id;
+            const query = { _id: new ObjectId(reviewId) };
+            const result = await reviewsCollection.deleteOne(query);
+            res.send(result);
+        });
+
 
         // Send a ping to confirm a successful connection
         // await client.db("admin").command({ ping: 1 });
