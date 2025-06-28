@@ -207,11 +207,11 @@ async function run() {
 
         // review related api's
         app.get('/reviews', async (req, res) => {
-            const email = req.query.email;
-            const query = email ? { userEmail: email } : {};
+            const universityId = req.query.universityId;
+            const query = universityId ? { universityId: universityId } : {};
             const result = await reviewCollection.find(query).toArray();
             res.send(result);
-        })
+        });
 
         app.post('/reviews', async (req, res) => {
             const item = req.body;
