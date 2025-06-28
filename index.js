@@ -121,6 +121,20 @@ async function run() {
             const result = await scholarCollection.find().toArray();
             res.send(result);
         });
+
+        app.get('/scholar/top', async (req, res) => {
+            try {
+                const topScholarships = await scholarCollection.find({})
+                    .sort({ applicationFees: 1, scholarshipPostDate: -1 })
+                    .limit(6)
+                    .toArray();
+
+                res.send(topScholarships);
+            } catch (error) {
+                res.status(500).send({ message: 'Failed to load top scholarships' });
+            }
+        });
+
         app.get('/scholar/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
@@ -134,6 +148,40 @@ async function run() {
             res.send(result);
         });
 
+        app.patch('/scholar/:id', async (req, res) => {
+            const id = req.params.id;
+            const updates = req.body;
+
+            const filter = { _id: new ObjectId(id) };
+            const updateItem = {
+                $set: {
+                    scholarshipName: updates.scholarshipName,
+                    applicationDeadline: updates.applicationDeadline,
+                    applicationFees: updates.applicationFees,
+                    postedEmail: updates.postedEmail,
+                    scholarshipCategory: updates.scholarshipCategory,
+                    scholarshipPostDate: updates.scholarshipPostDate,
+                    serviceCharge: updates.serviceCharge,
+                    subjectCategory: updates.subjectCategory,
+                    tuitionFees: updates.tuitionFees,
+                    universityCity: updates.universityCity,
+                    universityCountry: updates.universityCountry,
+                    universityName: updates.universityName,
+                    universityRank: updates.universityRank
+                }
+            };
+
+            const result = await scholarCollection.updateOne(filter, updateItem);
+            res.send(result);
+        });
+
+
+        app.delete('/scholar/:id', verifyToken, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await scholarCollection.deleteOne(query);
+            res.send(result);
+        });
 
         // applied related api's
         app.get('/scholarApplied', async (req, res) => {
@@ -160,10 +208,10 @@ async function run() {
         // review related api's
         app.get('/reviews', async (req, res) => {
             const email = req.query.email;
-            const query = { userEmail: email };
+            const query = email ? { userEmail: email } : {};
             const result = await reviewCollection.find(query).toArray();
             res.send(result);
-        });
+        })
 
         app.post('/reviews', async (req, res) => {
             const item = req.body;
@@ -183,7 +231,7 @@ async function run() {
                 }
             };
 
-            const result = await reviewsCollection.updateOne(filter, updateReview);
+            const result = await reviewCollection.updateOne(filter, updateReview);
             res.send(result);
         });
 
@@ -191,7 +239,7 @@ async function run() {
         app.delete('/reviews/:id', async (req, res) => {
             const reviewId = req.params.id;
             const query = { _id: new ObjectId(reviewId) };
-            const result = await reviewsCollection.deleteOne(query);
+            const result = await reviewCollection.deleteOne(query);
             res.send(result);
         });
 
