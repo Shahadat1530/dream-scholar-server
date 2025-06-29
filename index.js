@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY)
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000;
 const app = express();
@@ -31,6 +32,7 @@ async function run() {
         const scholarCollection = client.db('scholarDB').collection('scholars');
         const appliedCollection = client.db('scholarDB').collection('applied');
         const reviewCollection = client.db('scholarDB').collection('reviews');
+        const paymentCollection = client.db('scholarDB').collection('payment');
 
 
         // jwt api's
@@ -241,6 +243,37 @@ async function run() {
             const query = { _id: new ObjectId(reviewId) };
             const result = await reviewCollection.deleteOne(query);
             res.send(result);
+        });
+
+
+        // payment related api's
+        app.post('/create-payment-intent', async (req, res) => {
+            const { price } = req.body;
+            const amount = parseInt(price * 100);
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: "usd",
+                payment_method_types: ['card']
+            });
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            });
+        });
+
+        app.get('/payments/:email', async (req, res) => {
+            const query = req.params.email;
+            // if (req.params.email !== req.decoded.email) {
+            //     res.status(403).send({ message: 'forbidden access' })
+            // }
+            const result = await paymentCollection.find(query).toArray();
+            res.send(result)
+        });
+
+        app.post('/payments', async (req, res) => {
+            const payment = req.body;
+            const paymentResult = await paymentCollection.insertOne(payment);
+            res.send(paymentResult);
         });
 
 
