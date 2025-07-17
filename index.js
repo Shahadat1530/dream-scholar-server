@@ -193,6 +193,18 @@ async function run() {
             res.send(result);
         });
 
+        app.get('/scholarApplied/:id', verifyToken, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            try {
+                const doc = await appliedCollection.findOne(query);
+                if (!doc) return res.status(404).send({ message: 'Not found.' });
+                res.send(doc);
+            } catch {
+                res.status(500).send({ message: 'Server-side error.' });
+            }
+        });
+
         app.post('/scholarApplied', verifyToken, async (req, res) => {
             const item = req.body;
             try {
@@ -206,18 +218,16 @@ async function run() {
         app.put('/scholarApplied/:id', verifyToken, async (req, res) => {
             const { id } = req.params;
             const updates = req.body;
-
+            console.log(req.body);
+            const filter = { _id: new ObjectId(id) };
             try {
-                const filter = { _id: new ObjectId(id) };
+                const result = await appliedCollection.updateOne(filter, { $set: updates });
 
-                const result = await appliedCollection.updateOne(filter,
-                    { $set: updates }
-                );
-
-                if (!result.value) {
+                if (!result) {
                     return res.status(404).send({ message: 'Application not found.' });
                 }
-                res.send(result.value);
+
+                res.send({ message: 'Application updated successfully.', result });
             } catch {
                 res.status(500).send({ message: 'Server-side error.' });
             }
@@ -232,20 +242,35 @@ async function run() {
 
 
         // review related api's
-        app.get('/reviews', async (req, res) => {
+        app.get('/reviews', verifyToken, async (req, res) => {
             const universityId = req.query.universityId;
-            const query = universityId ? { universityId: universityId } : {};
-            const result = await reviewCollection.find(query).toArray();
-            res.send(result);
+            const email = req.query.email;
+
+            let query = {};
+
+            if (universityId) {
+                query.universityId = universityId;
+            }
+
+            if (email) {
+                query.userEmail = email;
+            }
+
+            try {
+                const result = await reviewCollection.find(query).toArray();
+                res.send(result);
+            } catch (error) {
+                res.status(500).send({ message: 'Error fetching reviews', error });
+            }
         });
 
-        app.post('/reviews', async (req, res) => {
+        app.post('/reviews', verifyToken, async (req, res) => {
             const item = req.body;
             const result = await reviewCollection.insertOne(item);
             res.send(result);
         });
 
-        app.patch('/reviews/:id', async (req, res) => {
+        app.patch('/reviews/:id', verifyToken, async (req, res) => {
             const id = req.params.id;
             const reviewData = req.body;
             const filter = { _id: new ObjectId(id) };
@@ -262,7 +287,7 @@ async function run() {
         });
 
 
-        app.delete('/reviews/:id', async (req, res) => {
+        app.delete('/reviews/:id', verifyToken, async (req, res) => {
             const reviewId = req.params.id;
             const query = { _id: new ObjectId(reviewId) };
             const result = await reviewCollection.deleteOne(query);
