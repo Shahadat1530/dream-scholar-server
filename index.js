@@ -32,7 +32,7 @@ async function run() {
         const scholarCollection = client.db('scholarDB').collection('scholars');
         const appliedCollection = client.db('scholarDB').collection('applied');
         const reviewCollection = client.db('scholarDB').collection('reviews');
-        const paymentCollection = client.db('scholarDB').collection('payment');
+        const paymentCollection = client.db('scholarDB').collection('payments');
 
 
         // jwt api's
@@ -157,19 +157,19 @@ async function run() {
             const filter = { _id: new ObjectId(id) };
             const updateItem = {
                 $set: {
-                    scholarshipName: updates.scholarshipName,
-                    applicationDeadline: updates.applicationDeadline,
-                    applicationFees: updates.applicationFees,
-                    postedEmail: updates.postedEmail,
-                    scholarshipCategory: updates.scholarshipCategory,
-                    scholarshipPostDate: updates.scholarshipPostDate,
-                    serviceCharge: updates.serviceCharge,
-                    subjectCategory: updates.subjectCategory,
-                    tuitionFees: updates.tuitionFees,
-                    universityCity: updates.universityCity,
-                    universityCountry: updates.universityCountry,
-                    universityName: updates.universityName,
-                    universityRank: updates.universityRank
+                    scholarshipName: updates?.scholarshipName,
+                    applicationDeadline: updates?.applicationDeadline,
+                    applicationFees: updates?.applicationFees,
+                    postedEmail: updates?.postedEmail,
+                    scholarshipCategory: updates?.scholarshipCategory,
+                    scholarshipPostDate: updates?.scholarshipPostDate,
+                    serviceCharge: updates?.serviceCharge,
+                    subjectCategory: updates?.subjectCategory,
+                    tuitionFees: updates?.tuitionFees,
+                    universityCity: updates?.universityCity,
+                    universityCountry: updates?.universityCountry,
+                    universityName: updates?.universityName,
+                    universityRank: updates?.universityRank
                 }
             };
 
@@ -195,8 +195,32 @@ async function run() {
 
         app.post('/scholarApplied', verifyToken, async (req, res) => {
             const item = req.body;
-            const result = await appliedCollection.insertOne(item);
-            res.send(result);
+            try {
+                const result = await appliedCollection.insertOne(item);
+                res.send(result);
+            } catch {
+                res.status(500).send({ "message": "There is a server-side error!" })
+            }
+        });
+
+        app.put('/scholarApplied/:id', verifyToken, async (req, res) => {
+            const { id } = req.params;
+            const updates = req.body;
+
+            try {
+                const filter = { _id: new ObjectId(id) };
+
+                const result = await appliedCollection.updateOne(filter,
+                    { $set: updates }
+                );
+
+                if (!result.value) {
+                    return res.status(404).send({ message: 'Application not found.' });
+                }
+                res.send(result.value);
+            } catch {
+                res.status(500).send({ message: 'Server-side error.' });
+            }
         });
 
         app.delete('/scholarApplied/:id', verifyToken, async (req, res) => {
@@ -261,13 +285,11 @@ async function run() {
             });
         });
 
-        app.get('/payments/:email', async (req, res) => {
-            const query = req.params.email;
-            // if (req.params.email !== req.decoded.email) {
-            //     res.status(403).send({ message: 'forbidden access' })
-            // }
+        app.get('/payments/:email', verifyToken, async (req, res) => {
+            const email = req.params.email;
+            const query = { studentEmail: email };
             const result = await paymentCollection.find(query).toArray();
-            res.send(result)
+            res.send(result);
         });
 
         app.post('/payments', async (req, res) => {
