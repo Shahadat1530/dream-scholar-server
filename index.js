@@ -186,11 +186,20 @@ async function run() {
         });
 
         // applied related api's
-        app.get('/scholarApplied', async (req, res) => {
+        app.get('/scholarApplied', verifyToken, async (req, res) => {
             const email = req.query.email;
-            const query = { userEmail: email };
-            const result = await appliedCollection.find(query).toArray();
-            res.send(result);
+            let query = {};
+
+            if (email) {
+                query = { userEmail: email };
+            }
+
+            try {
+                const result = await appliedCollection.find(query).toArray();
+                res.send(result);
+            } catch {
+                res.status(500).send({ message: 'Server error' });
+            }
         });
 
         app.get('/scholarApplied/:id', verifyToken, async (req, res) => {
@@ -218,7 +227,6 @@ async function run() {
         app.put('/scholarApplied/:id', verifyToken, async (req, res) => {
             const { id } = req.params;
             const updates = req.body;
-            console.log(req.body);
             const filter = { _id: new ObjectId(id) };
             try {
                 const result = await appliedCollection.updateOne(filter, { $set: updates });
@@ -242,7 +250,7 @@ async function run() {
 
 
         // review related api's
-        app.get('/reviews', verifyToken, async (req, res) => {
+        app.get('/reviews', async (req, res) => {
             const universityId = req.query.universityId;
             const email = req.query.email;
 
@@ -259,8 +267,8 @@ async function run() {
             try {
                 const result = await reviewCollection.find(query).toArray();
                 res.send(result);
-            } catch (error) {
-                res.status(500).send({ message: 'Error fetching reviews', error });
+            } catch {
+                res.status(500).send({ message: 'Error fetching reviews' });
             }
         });
 
@@ -323,6 +331,51 @@ async function run() {
             res.send(paymentResult);
         });
 
+        // user dashboard stats
+        app.get('/userDashboard/stats/:email', verifyToken, async (req, res) => {
+            const email = req.params.email;
+
+            if (email !== req.decoded.email) {
+                return res.status(403).send({ message: 'Forbidden access' });
+            }
+
+            try {
+                const applicationCount = await appliedCollection.countDocuments({ userEmail: email });
+                const completedCount = await appliedCollection.countDocuments({
+                    userEmail: email, applicationStatus: 'completed'
+                });
+                const processingCount = await appliedCollection.countDocuments({ userEmail: email, applicationStatus: 'processing' });
+                const reviewCount = await reviewCollection.countDocuments({ userEmail: email });
+
+                res.send({
+                    totalApplications: applicationCount,
+                    completed: completedCount,
+                    processing: processingCount,
+                    reviews: reviewCount
+                });
+            } catch (error) {
+                res.status(500).send({ message: 'Failed to fetch dashboard stats' });
+            }
+        });
+
+        // admin dashboard stats
+        app.get('/admin-stats', verifyToken, async (req, res) => {
+            try {
+                const totalScholarships = await scholarCollection.estimatedDocumentCount();
+                const totalReviews = await reviewCollection.estimatedDocumentCount();
+                const applications = await appliedCollection.estimatedDocumentCount();
+                const totalApplicants = await userCollection.countDocuments({ role: 'user' });
+
+                res.send({
+                    totalScholarships,
+                    totalReviews,
+                    applications,
+                    totalApplicants
+                });
+            } catch (error) {
+                res.status(500).send({ message: 'Server error while fetching stats.' });
+            }
+        })
 
         // Send a ping to confirm a successful connection
         // await client.db("admin").command({ ping: 1 });
